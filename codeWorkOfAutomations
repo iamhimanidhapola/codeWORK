@@ -206,3 +206,12 @@ Caused by: java.lang.IllegalStateException: msedgedriver must exist: C:\msedgedr
 	at org.openqa.selenium.remote.service.DriverFinder.getBinaryPaths(DriverFinder.java:118)
 	... 7 more
 
+
+Exception in thread "main" java.util.NoSuchElementException: No value present
+	at java.base/java.util.Optional.get(Optional.java:143)
+	at io.github.bonigarcia.wdm.WebDriverManager.<init>(WebDriverManager.java:225)
+	at io.github.bonigarcia.wdm.managers.EdgeDriverManager.<init>(EdgeDriverManager.java:54)
+	at io.github.bonigarcia.wdm.WebDriverManager.edgedriver(WebDriverManager.java:252)
+	at SalesOrderAutomationEdge.main(SalesOrderAutomationEdge.java:21)
+
+
