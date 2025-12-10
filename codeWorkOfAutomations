@@ -42,3 +42,147 @@
         <version>7.9.0</version>
     </dependency>
 </dependencies>
+
+
+import org.openqa.selenium.*;
+import org.openqa.selenium.edge.EdgeDriver;
+import org.openqa.selenium.support.ui.Select;
+import java.io.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.nio.file.*;
+
+public class SalesOrderAutomationEdge {
+
+    public static void main(String[] args) throws Exception {
+
+        // 1. Launch Edge Browser (change path if needed)
+        System.setProperty("webdriver.edge.driver", "C:\\msedgedriver\\msedgedriver.exe");
+        WebDriver driver = new EdgeDriver();
+        driver.manage().window().maximize();
+
+        // 2. Go to Login Page
+        driver.get("https://your-login-url-here");
+        takeScreenshot(driver, "01_login_page");
+
+        // 3. Login (Change IDs as per your UI)
+        driver.findElement(By.id("username")).sendKeys("yourUsername");
+        driver.findElement(By.id("password")).sendKeys("yourPassword");
+        driver.findElement(By.id("loginButton")).click();
+        takeScreenshot(driver, "02_login_done");
+
+        // 4. Update sales_order.csv before uploading
+        updateCsv("C:\\project-root\\templates\\sales_order.csv");
+        takeScreenshot(driver, "03_csv_file_updated");
+
+        // 5. Navigate to Upload Utility → Sales Order Upload
+        driver.findElement(By.id("menu_upload_utility")).click();
+        takeScreenshot(driver, "04_upload_utility");
+
+        driver.findElement(By.id("sales_order_upload")).click();
+        takeScreenshot(driver, "05_sales_order_upload_page");
+
+        // 6. Click on Upload Button
+        driver.findElement(By.id("upload_button")).click();
+        takeScreenshot(driver, "06_click_upload");
+
+        // 7. Choose File
+        WebElement fileInput = driver.findElement(By.id("file_input"));
+        fileInput.sendKeys("C:\\project-root\\templates\\sales_order.csv");
+        takeScreenshot(driver, "07_file_selected");
+
+        // 8. Validate & Process
+        driver.findElement(By.id("continue_button")).click();
+        takeScreenshot(driver, "08_validation_completed");
+
+        // 9. Error Handling
+        boolean errorExists = driver.findElements(By.id("error_records_radio")).size() > 0;
+
+        if (errorExists) {
+            driver.findElement(By.id("error_records_radio")).click();
+            takeScreenshot(driver, "09_error_records_found");
+        }
+
+        // 10. Process Success Records
+        driver.findElement(By.id("success_records_radio")).click();
+        takeScreenshot(driver, "10_success_records_selected");
+
+        driver.findElement(By.id("upload_data_button")).click();
+        driver.switchTo().alert().accept();
+        takeScreenshot(driver, "11_data_uploaded");
+
+        // 11. Go to Order History
+        driver.findElement(By.id("menu_transactions")).click();
+        driver.findElement(By.id("receivables")).click();
+        driver.findElement(By.id("order_history")).click();
+        takeScreenshot(driver, "12_order_history_page");
+
+        // 12. Select DSE (Sales Person)
+        Select dse = new Select(driver.findElement(By.id("sales_person_dropdown")));
+        dse.selectByVisibleText("CTPNJ_MS017");
+        takeScreenshot(driver, "13_dse_selected");
+
+        // 13. Select Status = Opened
+        Select status = new Select(driver.findElement(By.id("status_dropdown")));
+        status.selectByVisibleText("Opened");
+        takeScreenshot(driver, "14_status_selected");
+
+        // 14. Search
+        driver.findElement(By.id("search_button")).click();
+        takeScreenshot(driver, "15_search_results");
+
+        driver.quit();
+    }
+
+    // ==============================================
+    // CSV UPDATE LOGIC
+    // ==============================================
+    private static void updateCsv(String csvPath) throws Exception {
+
+        Path path = Paths.get(csvPath);
+        StringBuilder updated = new StringBuilder();
+
+        LocalDate today = LocalDate.now();
+        DateTimeFormatter df = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        String todayDate = today.format(df);
+
+        BufferedReader br = new BufferedReader(new FileReader(csvPath));
+        String line;
+
+        while ((line = br.readLine()) != null) {
+
+            String[] col = line.split(",");
+
+            // F column (6th col → index 5) = order date
+            col[5] = todayDate;
+
+            // B column (2nd col → index 1) = update first 8 digits
+            String orderNo = col[1];
+
+            if (orderNo.length() >= 8) {
+                String firstEight = orderNo.substring(0, 8);
+                col[1] = firstEight + (System.currentTimeMillis() % 10000);
+            }
+
+            updated.append(String.join(",", col)).append("\n");
+        }
+
+        br.close();
+        Files.write(path, updated.toString().getBytes());
+    }
+
+    // ==============================================
+    // SCREENSHOT FUNCTION (SAVES TO project-root/logs)
+    // ==============================================
+    private static void takeScreenshot(WebDriver driver, String name) throws Exception {
+
+        File scr = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
+
+        String logPath = "C:\\project-root\\logs\\";
+        Files.copy(scr.toPath(),
+                Paths.get(logPath + name + ".png"),
+                StandardCopyOption.REPLACE_EXISTING);
+    }
+
+}
+
